@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f2">
+  <meta name="description" content="Protótipo local de dashboard de investimentos com dados fictícios.">
+  <title>Órbita — Demo de investimentos</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f1f3ff;
+      --muted: #9098b5;
+      --line: #303650;
+      --paper: #20243d;
+      --canvas: #171a2d;
+      --green: #35dfd0;
+      --green-dark: #4aeee0;
+      --green-pale: #233b49;
+      --lime: #54eddf;
+      --orange: #f3bb73;
+      --orange-pale: #3a3042;
+      --red: #ff6a9d;
+      --red-pale: #412b42;
+      --shadow: 0 12px 35px rgba(5, 7, 18, .24);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #7984ad; color: var(--ink); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { display: grid; grid-template-columns: 218px minmax(0, 1fr); width: calc(100% - 48px); min-height: calc(100vh - 48px); max-width: 1600px; margin: 24px auto; overflow: hidden; border: 1px solid #444a6d; border-radius: 17px; background: var(--canvas); box-shadow: 0 25px 80px rgba(13, 15, 33, .3); }
+    .sidebar { display: flex; flex-direction: column; padding: 27px 15px 20px; background: #1a1d32; border-right: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 11px; margin-bottom: 39px; }
+    .brand-mark { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 12px; color: #142638; background: var(--lime); box-shadow: 0 0 20px #54eddf36; }
+    .brand-name { font-size: 17px; font-weight: 750; letter-spacing: -.7px; }
+    .brand-caption { margin-top: 2px; color: var(--muted); font-size: 10px; letter-spacing: .9px; text-transform: uppercase; }
+    .nav-label { padding: 0 12px; margin: 0 0 9px; color: #98a09a; font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav-button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 10px; color: #68736c; background: transparent; text-align: left; font-size: 13px; font-weight: 550; transition: background .16s, color .16s; }
+    .nav-button:hover { color: var(--ink); background: #282d49; }
+    .nav-button.active { color: #54eddf; background: #233b49; box-shadow: inset 2px 0 #54eddf; font-weight: 700; }
+    .nav-icon { display: grid; width: 18px; place-items: center; font-size: 16px; }
+    .side-bottom { margin-top: auto; }
+    .demo-card { padding: 15px; border: 1px solid #343953; border-radius: 13px; background: #20243a; }
+    .demo-card-title { margin-bottom: 5px; font-size: 12px; font-weight: 700; }
+    .demo-card p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .profile { display: flex; align-items: center; gap: 10px; padding: 19px 8px 0; }
+    .avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: #b2fff3; background: #263d4b; font-size: 11px; font-weight: 750; }
+    .profile-name { font-size: 12px; font-weight: 650; }
+    .profile-sub { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .main { min-width: 0; padding: 28px clamp(20px, 4vw, 56px) 48px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .breadcrumb { color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .demo-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #38445b; border-radius: 99px; color: #9af4e7; background: #202d42; font-size: 10px; font-weight: 700; letter-spacing: .25px; }
+    .demo-dot { width: 7px; height: 7px; border-radius: 50%; background: #53e8c7; box-shadow: 0 0 8px #53e8c7aa; }
+    .icon-button { position: relative; display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 11px; color: #a9b0cb; background: var(--paper); font-size: 16px; }
+    .notice { display: flex; align-items: flex-start; gap: 12px; padding: 13px 15px; margin-bottom: 27px; border: 1px solid #63503c; border-radius: 11px; color: #ffd99c; background: #342d3b; box-shadow: inset 3px 0 #ffbc68; }
+    .notice-icon { flex: 0 0 auto; font-size: 15px; }
+    .notice strong { display: block; margin-bottom: 3px; font-size: 11px; letter-spacing: .15px; }
+    .notice p { margin: 0; font-size: 11px; line-height: 1.5; }
+    .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 0 0 21px; }
+    .eyebrow { margin-bottom: 7px; color: var(--green); font-size: 10px; font-weight: 750; letter-spacing: 1.2px; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(24px, 3vw, 31px); font-weight: 680; letter-spacing: -1.2px; }
+    .subtitle { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+    .date-pill { padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; color: #bec4da; background: var(--paper); font-size: 11px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 15px; }
+    .card { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: var(--shadow); }
+    .metric { padding: 16px 17px; }
+    .metric-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; }
+    .metric-icon { color: #98a39a; font-size: 14px; }
+    .metric-value { margin: 14px 0 7px; font-size: clamp(18px, 2vw, 23px); font-weight: 720; letter-spacing: -.8px; }
+    .metric-foot { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+    .positive { color: var(--green); font-weight: 700; }
+    .negative { color: var(--red); font-weight: 700; }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, .92fr); gap: 15px; margin-bottom: 15px; }
+    .panel { padding: 19px; }
+    .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 17px; }
+    .panel-title { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: -.15px; }
+    .panel-description { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .periods { display: flex; gap: 3px; padding: 3px; border-radius: 8px; background: #181c30; }
+    .period-button { padding: 5px 7px; border: 0; border-radius: 6px; color: #8c94b0; background: transparent; font-size: 9px; }
+    .period-button.active { color: #142d3c; background: #4ce8d7; box-shadow: 0 0 12px #4ce8d755; font-weight: 750; }
+    .chart-meta { display: flex; align-items: baseline; gap: 9px; margin: -4px 0 8px; }
+    .chart-total { font-size: 21px; font-weight: 700; letter-spacing: -.7px; }
+    .chart-change { color: var(--green); font-size: 10px; font-weight: 700; }
+    .chart-wrap { height: 190px; width: 100%; }
+    #performance-chart { display: block; width: 100%; height: 100%; overflow: visible; }
+    .chart-gridline { stroke: #343a56; stroke-width: 1; }
+    .chart-label { fill: #838ba8; font-size: 9px; }
+    .chart-area { fill: url(#chart-fill); }
+    .chart-bar { fill: url(#bar-fill); opacity: .76; }
+    .chart-line { fill: none; stroke: #41e6da; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 5px #41e6da88); }
+    .chart-dot { fill: #e9fffc; stroke: #41e6da; stroke-width: 2; }
+    .allocation-body { display: flex; align-items: center; justify-content: center; gap: clamp(15px, 3vw, 28px); min-height: 185px; }
+    .donut { position: relative; width: 142px; height: 142px; flex: 0 0 142px; }
+    .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut-track { fill: none; stroke: #343a55; stroke-width: 15; }
+    .donut-segment { fill: none; stroke-width: 15; stroke-linecap: butt; }
+    .donut-center { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; pointer-events: none; }
+    .donut-center strong { font-size: 17px; letter-spacing: -.6px; }
+    .donut-center span { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .legend { display: grid; gap: 12px; min-width: 100px; }
+    .legend-row { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 7px; font-size: 10px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 3px; }
+    .legend-name { color: #a4abc4; }
+    .legend-value { font-weight: 700; }
+    .holdings-card { overflow: hidden; }
+    .holdings-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 19px 14px; }
+    .text-button { padding: 5px 0; border: 0; color: var(--green); background: transparent; font-size: 10px; font-weight: 700; }
+    .table-scroll { overflow-x: auto; }
+    .holdings-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    .holdings-table th { padding: 10px 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: #929bbc; background: #1c2036; font-size: 9px; font-weight: 650; }
+    .holdings-table td { padding: 12px 18px; border-bottom: 1px solid #2a2f49; font-size: 10px; }
+    .holdings-table tr:last-child td { border-bottom: 0; }
+    .asset-cell { display: flex; align-items: center; gap: 9px; }
+    .asset-logo { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 10px; color: var(--logo-ink, #356450); background: var(--logo-bg, #e7f2eb); font-size: 9px; font-weight: 800; }
+    .asset-name { font-size: 10px; font-weight: 700; }
+    .asset-type { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .align-right { text-align: right !important; }
+    .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(250px, 1fr); gap: 15px; margin-top: 15px; }
+    .rules-list { display: grid; gap: 11px; }
+    .rule-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 12px; border: 1px solid #343a55; border-radius: 8px; background: #1c2036; }
+    .rule-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .rule-icon { display: grid; width: 31px; height: 31px; flex: 0 0 31px; place-items: center; border-radius: 10px; color: #80f5e4; background: #273b49; font-size: 12px; }
+    .rule-title { font-size: 10px; font-weight: 700; }
+    .rule-caption { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .status { display: inline-flex; align-items: center; gap: 5px; color: #72dfc4; font-size: 9px; font-weight: 700; white-space: nowrap; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #53e8c7; box-shadow: 0 0 7px #53e8c788; }
+    .status.triggered { color: var(--red); }
+    .status.triggered .status-dot { background: #d26d65; }
+    .insight { padding: 12px; border: 1px solid #354057; border-radius: 8px; background: #1e2439; }
+    .insight + .insight { margin-top: 9px; }
+    .insight-label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: #72ded0; font-size: 9px; font-weight: 750; letter-spacing: .6px; text-transform: uppercase; }
+    .insight p { margin: 0; color: #a3abc4; font-size: 10px; line-height: 1.55; }
+    .page-view { display: none; }
+    .page-view.active { display: block; animation: appear .2s ease-out; }
+    .loading-state { display: none; }
+    .app.is-loading .loading-state { display: block; }
+    .app.is-loading .page-view { display: none !important; }
+    @keyframes appear { from { opacity: .5; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+    .section-card { padding: 20px; }
+    .section-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .search { width: min(250px, 100%); padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: #191d32; color: var(--ink); font-size: 11px; }
+    .search:focus, .field:focus { border-color: #49cdbd; box-shadow: 0 0 0 3px #25504c; }
+    .empty-state { display: none; padding: 35px 20px; color: var(--muted); text-align: center; font-size: 11px; }
+    .empty-state.visible { display: block; }
+    .empty-icon { margin-bottom: 9px; color: #adb7ad; font-size: 25px; }
+    .rules-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .8fr); gap: 15px; }
+    .rule-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+    .field-wrap { display: grid; gap: 7px; }
+    .field-wrap.full { grid-column: 1 / -1; }
+    .field-label { color: #b3bad0; font-size: 10px; font-weight: 650; }
+    .field { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--ink); background: #191d32; font-size: 11px; }
+    .field-help { color: #8d96b2; font-size: 9px; line-height: 1.45; }
+    .form-actions { display: flex; align-items: center; gap: 10px; margin-top: 17px; }
+    .primary-button { padding: 10px 14px; border: 0; border-radius: 8px; color: #172238; background: #42dccc; font-size: 10px; font-weight: 750; box-shadow: 0 0 15px #42dccc33; }
+    .primary-button:hover { background: #70eee1; }
+    .secondary-button { padding: 9px 12px; border: 1px solid #3b425e; border-radius: 8px; color: #bbc1d7; background: #252a43; font-size: 10px; font-weight: 650; }
+    .rule-summary { display: grid; gap: 11px; margin-top: 17px; }
+    .summary-line { display: flex; justify-content: space-between; gap: 15px; padding-bottom: 10px; border-bottom: 1px solid #343a55; color: var(--muted); font-size: 10px; }
+    .summary-line:last-child { padding: 0; border: 0; }
+    .summary-line strong { color: var(--ink); font-weight: 650; text-align: right; }
+    .signal-card { padding: 17px; border: 1px solid #37405b; border-radius: 11px; background: #1c2238; }
+    .signal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 11px; font-weight: 750; }
+    .signal-symbol { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 9px; color: #74f1de; background: #273c49; }
+    .signal-card p { margin: 0; color: #a5adc4; font-size: 10px; line-height: 1.6; }
+    .signal-status { margin-top: 12px; padding: 9px; border: 1px solid #33564f; border-radius: 8px; color: #83e9ca; background: #203a40; font-size: 9px; font-weight: 700; }
+    .signal-status.triggered { color: var(--red); background: var(--red-pale); }
+    .simulator { margin-top: 14px; padding-top: 13px; border-top: 1px solid #343a55; }
+    .simulator .secondary-button { width: 100%; margin-top: 10px; }
+    .simulator p { color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .insights-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .insight.large { min-height: 132px; padding: 17px; }
+    .insight.large p { font-size: 11px; }
+    .loading-skeleton { height: 12px; border-radius: 5px; background: linear-gradient(90deg, #292e48 25%, #363c5a 50%, #292e48 75%); background-size: 200% 100%; animation: shimmer 1s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 20; max-width: min(340px, calc(100vw - 40px)); padding: 12px 15px; border: 1px solid #3a5261; border-radius: 10px; color: #a6f1dc; background: #202740; box-shadow: var(--shadow); font-size: 11px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: none; }
+    .footer-note { padding: 18px 0 0; color: #7983a1; text-align: center; font-size: 9px; }
+    @media (max-width: 1000px) {
+      .app { grid-template-columns: 200px minmax(0, 1fr); }
+      .main { padding-right: 24px; padding-left: 24px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .content-grid { grid-template-columns: minmax(0, 1.4fr) minmax(245px, .9fr); }
+    }
+    @media (max-width: 760px) {
+      .app { display: block; padding-bottom: 63px; }
+      .app { width: 100%; min-height: 100vh; margin: 0; border: 0; border-radius: 0; }
+      body { background: var(--canvas); }
+      .sidebar { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: block; height: 62px; padding: 5px 8px max(5px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); border-right: 0; background: #1a1d32; }
+      .brand, .nav-label, .side-bottom { display: none; }
+      .nav { grid-template-columns: repeat(4, 1fr); gap: 2px; height: 100%; }
+      .nav-button { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 4px; border-radius: 8px; font-size: 8px; }
+      .nav-icon { font-size: 15px; }
+      .main { padding: 18px 15px 28px; }
+      .topbar { margin-bottom: 17px; }
+      .notice { margin-bottom: 20px; }
+      .content-grid, .bottom-grid, .rules-layout { grid-template-columns: 1fr; }
+      .content-grid { gap: 12px; }
+      .allocation-body { min-height: 160px; }
+      .chart-wrap { height: 165px; }
+      .panel { padding: 16px; }
+      .holdings-heading { padding: 16px 16px 12px; }
+      .holdings-table th, .holdings-table td { padding-right: 13px; padding-left: 13px; }
+    }
+    @media (max-width: 430px) {
+      .main { padding-right: 12px; padding-left: 12px; }
+      .metrics { gap: 9px; }
+      .metric { padding: 13px; }
+      .metric-value { margin-top: 11px; font-size: 17px; }
+      .metric-label { font-size: 9px; }
+      .page-heading { align-items: flex-start; }
+      .date-pill { font-size: 9px; }
+      .insights-grid { grid-template-columns: 1fr; }
+      .period-button { padding-right: 5px; padding-left: 5px; }
+      .allocation-body { gap: 10px; }
+      .donut { width: 120px; height: 120px; flex-basis: 120px; }
+      .legend { gap: 9px; }
+      .rule-form { grid-template-columns: 1fr; }
+      .field-wrap.full { grid-column: auto; }
+    }
+    .chart-meta { margin-bottom: 13px; }
+    .metric { background: linear-gradient(145deg, #242943, #1d2138 72%); }
+    .metric:hover, .card:hover { border-color: #414866; }
+    .panel-heading { margin-bottom: 14px; }
+    .holdings-card { overflow: hidden; }
+    .holdings-table tbody tr:hover { background: #282d48; }
+    .asset-type, .rule-caption, .metric-label, .panel-description, .subtitle, .breadcrumb { color: #9098b5; }
+    .asset-logo { border: 1px solid #ffffff12; }
+    .signal-status.triggered { border-color: #633b5c; color: #ff97b2; background: #412b42; }
+    .notice p { color: #e9cba4; }
+    @media (max-width: 760px) {
+      .app { border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app is-loading" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 12.5c2.4-5.8 11.6-5.8 14 0M5.2 14.5c1.7-3.8 7.9-3.8 9.6 0M8.2 16.3c.6-1.3 3-1.3 3.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="5.2" r="1.4" fill="currentColor"/></svg>
+        </div>
+        <div><div class="brand-name">órbita</div><div class="brand-caption">investimentos</div></div>
+      </div>
+      <div class="nav-label">Menu</div>
+      <nav class="nav" aria-label="Navegação principal">
+        <button class="nav-button active" data-view="dashboard"><span class="nav-icon">⌂</span><span>Visão geral</span></button>
+        <button class="nav-button" data-view="assets"><span class="nav-icon">◫</span><span>Ativos</span></button>
+        <button class="nav-button" data-view="rules"><span class="nav-icon">⟳</span><span>Regras</span></button>
+        <button class="nav-button" data-view="insights"><span class="nav-icon">✳</span><span>Insights</span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="demo-card">
+          <div class="demo-card-title">Ambiente de demonstração</div>
+          <p>Este protótipo usa somente dados inventados e não se conecta a serviços financeiros.</p>
+        </div>
+        <div class="profile">
+          <div class="avatar" aria-hidden="true">DM</div>
+          <div><div class="profile-name">Demonstração</div><div class="profile-sub">Conta fictícia</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb-current">Visão geral</strong></div>
+        <div class="top-actions">
+          <span class="demo-chip"><span class="demo-dot"></span> MODO DEMO</span>
+          <button class="icon-button" aria-label="Notificações simuladas" title="Notificações simuladas">♧</button>
+        </div>
+      </header>
+
+      <div class="notice" role="note">
+        <span class="notice-icon" aria-hidden="true">ⓘ</span>
+        <div><strong>DEMO — dados fictícios; sem conexão com corretora; nenhuma ordem real; não é recomendação de investimento</strong><p>Esta experiência é apenas uma simulação local para demonstrar funcionalidades. Valores, ativos, alertas e cenários são ilustrativos.</p></div>
+      </div>
+
+      <div class="card panel loading-state" id="loading-state" role="status" aria-live="polite">
+        <div class="loading-skeleton" style="width:28%;margin-bottom:15px"></div>
+        <div class="loading-skeleton" style="width:52%;height:22px;margin-bottom:12px"></div>
+        <div class="loading-skeleton" style="width:100%;height:120px"></div>
+        <p class="panel-description">Carregando dados fictícios da demonstração…</p>
+      </div>
+
+      <section class="page-view active" id="view-dashboard" data-title="Visão geral">
+        <div class="page-heading">
+          <div><div class="eyebrow">Quarta-feira, 12 de junho</div><h1>Bom dia, investidor(a) 👋</h1><p class="subtitle">Aqui está um resumo fictício da sua carteira demonstrativa.</p></div>
+          <div class="date-pill">◷ &nbsp;Últimos 6 meses</div>
+        </div>
+        <div class="metrics" id="metrics" aria-label="Indicadores simulados">
+          <article class="card metric"><div class="metric-label">Patrimônio total <span class="metric-icon">◎</span></div><div class="metric-value">R$ 128.450,00</div><div class="metric-foot"><span class="positive">+8,42%</span><span>no período simulado</span></div></article>
+          <article class="card metric"><div class="metric-label">Rendimento total <span class="metric-icon">↗</span></div><div class="metric-value positive">+ R$ 9.980,00</div><div class="metric-foot"><span class="positive">▲ 2,16%</span><span>no último mês</span></div></article>
+          <article class="card metric"><div class="metric-label">Investido <span class="metric-icon">▤</span></div><div class="metric-value">R$ 118.470,00</div><div class="metric-foot"><span>em 6 ativos fictícios</span></div></article>
+          <article class="card metric"><div class="metric-label">Regras ativas <span class="metric-icon">⟳</span></div><div class="metric-value" id="active-rules-count">3 regras</div><div class="metric-foot"><span class="positive">● Simulação ligada</span></div></article>
+        </div>
+        <div class="content-grid">
+          <article class="card panel">
+            <div class="panel-heading"><div><h2 class="panel-title">Evolução do patrimônio</h2><p class="panel-description">Desempenho ilustrativo, sem cotação em tempo real</p></div>
+              <div class="periods" aria-label="Período do gráfico">
+                <button class="period-button" data-period="1M">1M</button><button class="period-button" data-period="3M">3M</button><button class="period-button active" data-period="6M">6M</button><button class="period-button" data-period="1A">1A</button>
+              </div>
+            </div>
+            <div class="chart-meta"><span class="chart-total">R$ 128.450</span><span class="chart-change">↗ 8,42%</span></div>
+            <div class="chart-wrap"><svg id="performance-chart" viewBox="0 0 650 190" preserveAspectRatio="none" role="img" aria-label="Gráfico ilustrativo de evolução patrimonial"><defs><linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#41e6da" stop-opacity=".25"/><stop offset="100%" stop-color="#41e6da" stop-opacity="0"/></linearGradient><linearGradient id="bar-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#41e6da" stop-opacity=".9"/><stop offset="100%" stop-color="#5587ff" stop-opacity=".3"/></linearGradient></defs><g id="chart-grid"></g><g id="chart-bars"></g><path id="chart-area" class="chart-area"></path><path id="chart-line" class="chart-line"></path><circle id="chart-dot" class="chart-dot" r="4"></circle><g id="chart-labels"></g></svg></div>
+          </article>
+          <article class="card panel">
+            <div class="panel-heading"><div><h2 class="panel-title">Alocação da carteira</h2><p class="panel-description">Distribuição ilustrativa</p></div><span class="metric-icon" aria-hidden="true">···</span></div>
+            <div class="allocation-body"><div class="donut"><svg viewBox="0 0 120 120" aria-label="Gráfico de alocação fictícia"><circle class="donut-track" cx="60" cy="60" r="45"></circle><circle class="donut-segment" cx="60" cy="60" r="45" stroke="#26d9f2" stroke-dasharray="107.44 282.74" stroke-dashoffset="0"></circle><circle class="donut-segment" cx="60" cy="60" r="45" stroke="#bd59ff" stroke-dasharray="79.17 282.74" stroke-dashoffset="-107.44"></circle><circle class="donut-segment" cx="60" cy="60" r="45" stroke="#ec42c3" stroke-dasharray="59.38 282.74" stroke-dashoffset="-186.61"></circle><circle class="donut-segment" cx="60" cy="60" r="45" stroke="#ffb951" stroke-dasharray="36.76 282.74" stroke-dashoffset="-245.99"></circle></svg><div class="donut-center"><strong>100%</strong><span>distribuição</span></div></div>
+              <div class="legend"><div class="legend-row"><i class="legend-dot" style="background:#26d9f2"></i><span class="legend-name">Ações</span><strong class="legend-value">38%</strong></div><div class="legend-row"><i class="legend-dot" style="background:#bd59ff"></i><span class="legend-name">FIIs</span><strong class="legend-value">28%</strong></div><div class="legend-row"><i class="legend-dot" style="background:#ec42c3"></i><span class="legend-name">Renda fixa</span><strong class="legend-value">21%</strong></div><div class="legend-row"><i class="legend-dot" style="background:#ffb951"></i><span class="legend-name">Exterior</span><strong class="legend-value">13%</strong></div></div>
+            </div>
+          </article>
+        </div>
+        <article class="card holdings-card">
+          <div class="holdings-heading"><div><h2 class="panel-title">Seus ativos</h2><p class="panel-description">Cotações e posições fictícias</p></div><button class="text-button" data-go="assets">Ver todos &nbsp;→</button></div>
+          <div class="table-scroll"><table class="holdings-table"><thead><tr><th>ATIVO</th><th>PREÇO DEMO</th><th>QUANTIDADE</th><th>VALOR TOTAL</th><th class="align-right">VARIAÇÃO</th></tr></thead><tbody id="dashboard-holdings"></tbody></table></div>
+        </article>
+        <div class="bottom-grid">
+          <article class="card panel"><div class="panel-heading"><div><h2 class="panel-title">Regras de proteção</h2><p class="panel-description">Monitoramento apenas demonstrativo</p></div><button class="text-button" data-go="rules">Configurar →</button></div><div class="rules-list" id="dashboard-rules"></div></article>
+          <article class="card panel"><div class="panel-heading"><div><h2 class="panel-title">Insights de demonstração</h2><p class="panel-description">Exemplos gerados com dados fictícios</p></div><span class="demo-chip">SIMULADO</span></div><div id="dashboard-insights"></div></article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-assets" data-title="Ativos">
+        <div class="page-heading"><div><div class="eyebrow">Sua carteira demo</div><h1>Ativos</h1><p class="subtitle">Consulte as posições e variações inventadas deste protótipo.</p></div><span class="demo-chip"><span class="demo-dot"></span> 6 ativos fictícios</span></div>
+        <article class="card section-card"><div class="section-toolbar"><h2 class="panel-title">Posições demonstrativas</h2><input class="search" id="asset-search" type="search" placeholder="⌕  Buscar ativo ou categoria" aria-label="Buscar ativo ou categoria"></div><div class="table-scroll"><table class="holdings-table"><thead><tr><th>ATIVO</th><th>PREÇO DEMO</th><th>QUANTIDADE</th><th>VALOR TOTAL</th><th class="align-right">VARIAÇÃO</th></tr></thead><tbody id="all-holdings"></tbody></table><div class="empty-state" id="assets-empty"><div class="empty-icon">⌕</div><strong>Nenhum ativo encontrado</strong><p>Tente buscar por outro nome ou categoria.</p></div></div></article>
+      </section>
+
+      <section class="page-view" id="view-rules" data-title="Regras">
+        <div class="page-heading"><div><div class="eyebrow">Controles de demonstração</div><h1>Regras de proteção</h1><p class="subtitle">Configure limites fictícios e veja como os sinais seriam apresentados.</p></div><span class="demo-chip"><span class="demo-dot"></span> Paper trading</span></div>
+        <div class="rules-layout">
+          <article class="card section-card">
+            <div class="panel-heading"><div><h2 class="panel-title">Configurar regra demonstrativa</h2><p class="panel-description">As alterações ficam somente neste navegador.</p></div></div>
+            <form id="rule-form">
+              <div class="rule-form">
+                <label class="field-wrap full"><span class="field-label">Ativo de demonstração</span><select class="field" id="rule-asset"><option value="PETR4">PETR4 · Ação fictícia</option><option value="IVVB11">IVVB11 · ETF fictício</option><option value="HGLG11">HGLG11 · FII fictício</option></select></label>
+                <label class="field-wrap"><span class="field-label">Stop loss (%)</span><input class="field" id="stop-percent" type="number" min="0.5" max="50" step="0.5" value="8" required><span class="field-help">Queda ilustrativa a partir do preço-base.</span></label>
+                <label class="field-wrap"><span class="field-label">Take profit (%)</span><input class="field" id="take-percent" type="number" min="0.5" max="100" step="0.5" value="15" required><span class="field-help">Alta ilustrativa a partir do preço-base.</span></label>
+              </div>
+              <div class="form-actions"><button class="primary-button" type="submit">Salvar regra simulada</button><button class="secondary-button" type="button" id="reset-rule">Restaurar exemplo</button></div>
+            </form>
+            <div class="rule-summary" id="rule-summary"></div>
+          </article>
+          <article class="card section-card">
+            <div class="panel-heading"><div><h2 class="panel-title">Sinal da simulação</h2><p class="panel-description">Exemplo local — sem dados de mercado</p></div></div>
+            <div class="signal-card"><div class="signal-head"><span class="signal-symbol">↗</span><span id="signal-asset">PETR4</span></div><p id="signal-copy">A regra está configurada para fins demonstrativos. Simule um cenário para ver como um alerta seria exibido.</p><div class="signal-status" id="signal-status">● Aguardando cenário de demonstração</div><div class="simulator"><p>O botão abaixo altera um preço fictício localmente. Nenhuma ordem ou conexão externa é realizada.</p><button class="secondary-button" id="simulate-scenario" type="button">Simular variação fictícia</button></div></div>
+            <div class="rules-list" id="rules-list" style="margin-top:14px"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-view" id="view-insights" data-title="Insights">
+        <div class="page-heading"><div><div class="eyebrow">Leituras ilustrativas</div><h1>Insights</h1><p class="subtitle">Exemplos estáticos para demonstrar uma possível interface de análises.</p></div><span class="demo-chip">NÃO É RECOMENDAÇÃO</span></div>
+        <div class="insights-grid">
+          <article class="card insight large"><div class="insight-label">◌ &nbsp; Diversificação · simulação</div><p>A carteira fictícia deste exemplo está distribuída entre quatro categorias. A visualização serve apenas para demonstrar como um resumo poderia aparecer.</p></article>
+          <article class="card insight large"><div class="insight-label">↗ &nbsp; Evolução · dados fictícios</div><p>O gráfico usa uma série inventada de seis meses e não representa resultados passados ou esperados de qualquer ativo real.</p></article>
+          <article class="card insight large"><div class="insight-label">⟳ &nbsp; Regras · paper trading</div><p>Limites de stop loss e take profit podem ser ajustados na seção Regras. Os sinais são calculados somente sobre preços fictícios locais.</p></article>
+          <article class="card insight large"><div class="insight-label">✳ &nbsp; Assistente · simulação</div><p>Este painel contém textos de exemplo. Nenhuma inteligência artificial é chamada e nenhuma recomendação personalizada é gerada.</p></article>
+        </div>
+      </section>
+      <div class="footer-note">Protótipo demonstrativo · Sem conexão com corretora ou dados externos · Valores ilustrativos</div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const assets = [
+        { ticker: "PETR4", name: "Petrobras PN", type: "Ação fictícia", price: 38.42, quantity: 120, change: 2.34, initials: "P", bg: "#eaf2e4", ink: "#4b6c38" },
+        { ticker: "IVVB11", name: "iShares S&P 500", type: "ETF fictício", price: 342.18, quantity: 48, change: 1.82, initials: "I", bg: "#e8eef6", ink: "#47617f" },
+        { ticker: "HGLG11", name: "CSHG Logística", type: "FII fictício", price: 159.30, quantity: 75, change: .64, initials: "H", bg: "#f5eee4", ink: "#8c6942" },
+        { ticker: "VALE3", name: "Vale ON", type: "Ação fictícia", price: 61.75, quantity: 90, change: -1.14, initials: "V", bg: "#e9f1ea", ink: "#507158" },
+        { ticker: "BOVA11", name: "iShares Ibovespa", type: "ETF fictício", price: 128.90, quantity: 55, change: .92, initials: "B", bg: "#f2ebf5", ink: "#7a6087" },
+        { ticker: "CDB-DEMO", name: "CDB demonstração", type: "Renda fixa fictícia", price: 1042.50, quantity: 20, change: .88, initials: "C", bg: "#eaf0f3", ink: "#57717c" }
+      ];
+      const initialRules = [
+        { ticker: "PETR4", kind: "Stop loss", percent: 8, status: "monitoring" },
+        { ticker: "IVVB11", kind: "Take profit", percent: 15, status: "monitoring" },
+        { ticker: "HGLG11", kind: "Stop loss", percent: 6, status: "monitoring" }
+      ];
+      let rules = initialRules.map(rule => ({ ...rule }));
+      let scenarioCount = 0;
+      const assetByTicker = ticker => assets.find(asset => asset.ticker === ticker);
+      const money = value => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      const price = value => money(value);
+      const formatChange = change => `${change > 0 ? "+" : ""}${change.toFixed(2).replace(".", ",")}%`;
+
+      function holdingRow(asset) {
+        const changeClass = asset.change >= 0 ? "positive" : "negative";
+        const value = asset.price * asset.quantity;
+        return `<tr data-asset="${asset.ticker.toLowerCase()} ${asset.name.toLowerCase()} ${asset.type.toLowerCase()}"><td><div class="asset-cell"><div class="asset-logo" style="--logo-bg:${asset.bg};--logo-ink:${asset.ink}">${asset.initials}</div><div><div class="asset-name">${asset.ticker}</div><div class="asset-type">${asset.name} · ${asset.type}</div></div></div></td><td>${price(asset.price)}</td><td>${asset.quantity}</td><td>${money(value)}</td><td class="align-right ${changeClass}">${formatChange(asset.change)}</td></tr>`;
+      }
+
+      function renderHoldings() {
+        document.getElementById("dashboard-holdings").innerHTML = assets.slice(0, 4).map(holdingRow).join("");
+        document.getElementById("all-holdings").innerHTML = assets.map(holdingRow).join("");
+      }
+
+      function renderRuleRows(target, compact) {
+        document.getElementById(target).innerHTML = rules.map(rule => {
+          const triggered = rule.status === "triggered";
+          const label = triggered ? "Sinal acionado" : compact ? "Monitoramento demo" : "Monitoramento simulado";
+          return `<div class="rule-row"><div class="rule-left"><div class="rule-icon">${rule.kind === "Stop loss" ? "↓" : "↑"}</div><div><div class="rule-title">${rule.kind} · ${rule.ticker}</div><div class="rule-caption">${rule.percent}% de variação · dados fictícios</div></div></div><span class="status ${triggered ? "triggered" : ""}"><i class="status-dot"></i>${label}</span></div>`;
+        }).join("");
+      }
+
+      function renderSummary() {
+        const ticker = document.getElementById("rule-asset").value;
+        const asset = assetByTicker(ticker);
+        const stop = Number(document.getElementById("stop-percent").value) || 0;
+        const take = Number(document.getElementById("take-percent").value) || 0;
+        document.getElementById("rule-summary").innerHTML = `<div class="summary-line"><span>Ativo selecionado</span><strong>${ticker} · preço demo ${price(asset.price)}</strong></div><div class="summary-line"><span>Stop loss demonstrativo</span><strong>${price(asset.price * (1 - stop / 100))} (−${stop}%)</strong></div><div class="summary-line"><span>Take profit demonstrativo</span><strong>${price(asset.price * (1 + take / 100))} (+${take}%)</strong></div>`;
+        document.getElementById("signal-asset").textContent = `${ticker} · ${asset.name}`;
+      }
+
+      function renderInsights() {
+        const container = document.getElementById("dashboard-insights");
+        container.innerHTML = `<div class="insight"><div class="insight-label">✳ &nbsp; Observação simulada</div><p>A carteira fictícia tem exposição a quatro categorias. Esta observação é apenas um exemplo de interface, não uma análise financeira.</p></div><div class="insight"><div class="insight-label">⟳ &nbsp; Regras ativas</div><p>${rules.filter(rule => rule.status !== "disabled").length} regras de demonstração configuradas. Nenhuma ação será executada.</p></div>`;
+      }
+
+      function drawChart(period) {
+        const series = {
+          "1M": [36, 34, 39, 37, 46, 42, 48, 47, 56, 52, 59, 64, 61, 70],
+          "3M": [30, 35, 32, 40, 37, 46, 43, 52, 49, 56, 54, 66, 62, 72],
+          "6M": [25, 30, 28, 38, 35, 42, 39, 50, 47, 56, 52, 62, 58, 72],
+          "1A": [18, 24, 21, 32, 28, 40, 36, 48, 44, 58, 54, 65, 60, 74]
+        }[period];
+        const width = 650, height = 190, top = 13, bottom = 25, left = 2, right = 8;
+        const chartHeight = height - top - bottom;
+        const points = series.map((value, index) => ({
+          x: left + (width - left - right) * index / (series.length - 1),
+          y: top + chartHeight * (1 - (value - 15) / 65)
+        }));
+        const line = points.map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+        const barWidth = (width - left - right) / (points.length * 1.8);
+        document.getElementById("chart-bars").innerHTML = points.map(point =>
+          `<rect class="chart-bar" x="${(point.x - barWidth / 2).toFixed(1)}" y="${point.y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(height - bottom - point.y).toFixed(1)}" rx="1"></rect>`
+        ).join("");
+        document.getElementById("chart-line").setAttribute("d", line);
+        document.getElementById("chart-area").setAttribute("d", `${line} L${points[points.length - 1].x},${height - bottom} L${points[0].x},${height - bottom} Z`);
+        const last = points[points.length - 1];
+        document.getElementById("chart-dot").setAttribute("cx", last.x);
+        document.getElementById("chart-dot").setAttribute("cy", last.y);
+        document.getElementById("chart-grid").innerHTML = [0, 1, 2, 3].map(index => {
+          const y = top + chartHeight * index / 3;
+          return `<line class="chart-gridline" x1="${left}" y1="${y}" x2="${width}" y2="${y}"></line>`;
+        }).join("");
+        const labels = period === "1M" ? ["Sem. 1", "Sem. 2", "Sem. 3", "Sem. 4"] : period === "1A" ? ["Jan", "Abr", "Jul", "Out", "Dez"] : ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
+        document.getElementById("chart-labels").innerHTML = labels.map((label, index) => {
+          const x = left + (width - left - right) * index / (labels.length - 1);
+          return `<text class="chart-label" x="${x}" y="${height - 5}" text-anchor="${index === 0 ? "start" : index === labels.length - 1 ? "end" : "middle"}">${label}</text>`;
+        }).join("");
+      }
+
+      let toastTimer;
+      function toast(message) {
+        const element = document.getElementById("toast");
+        element.textContent = message;
+        element.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => element.classList.remove("show"), 2600);
+      }
+
+      document.querySelectorAll(".nav-button").forEach(button => button.addEventListener("click", () => {
+        const view = button.dataset.view;
+        document.querySelectorAll(".nav-button").forEach(item => item.classList.toggle("active", item === button));
+        document.querySelectorAll(".page-view").forEach(section => section.classList.toggle("active", section.id === `view-${view}`));
+        document.getElementById("breadcrumb-current").textContent = document.getElementById(`view-${view}`).dataset.title;
+        if (view === "rules") renderSummary();
+      }));
+      document.querySelectorAll("[data-go]").forEach(button => button.addEventListener("click", () => {
+        document.querySelector(`[data-view="${button.dataset.go}"]`).click();
+      }));
+      document.querySelectorAll(".period-button").forEach(button => button.addEventListener("click", () => {
+        document.querySelectorAll(".period-button").forEach(item => item.classList.toggle("active", item === button));
+        drawChart(button.dataset.period);
+      }));
+
+      document.getElementById("asset-search").addEventListener("input", event => {
+        const term = event.target.value.trim().toLocaleLowerCase("pt-BR");
+        let visible = 0;
+        document.querySelectorAll("#all-holdings tr").forEach(row => {
+          const match = row.dataset.asset.includes(term);
+          row.hidden = !match;
+          if (match) visible++;
+        });
+        document.getElementById("assets-empty").classList.toggle("visible", visible === 0);
+      });
+
+      document.getElementById("rule-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const ticker = document.getElementById("rule-asset").value;
+        const stop = Number(document.getElementById("stop-percent").value);
+        const take = Number(document.getElementById("take-percent").value);
+        if (!Number.isFinite(stop) || !Number.isFinite(take) || stop <= 0 || take <= 0 || stop > 50 || take > 100) {
+          toast("Informe percentuais válidos para esta demonstração.");
+          return;
+        }
+        rules = rules.filter(rule => rule.ticker !== ticker);
+        rules.push({ ticker, kind: "Stop loss", percent: stop, status: "monitoring" });
+        rules.push({ ticker, kind: "Take profit", percent: take, status: "monitoring" });
+        document.getElementById("signal-copy").textContent = "Regra salva para demonstração. Simule uma variação fictícia para visualizar um possível sinal.";
+        document.getElementById("signal-status").textContent = "● Regra atualizada · aguardando cenário demo";
+        document.getElementById("signal-status").classList.remove("triggered");
+        renderSummary();
+        renderRuleRows("rules-list", false);
+        renderRuleRows("dashboard-rules", true);
+        renderInsights();
+        document.getElementById("active-rules-count").textContent = `${rules.filter(rule => rule.status !== "disabled").length} regras`;
+        toast(`Regra demonstrativa de ${ticker} atualizada localmente.`);
+      });
+
+      document.getElementById("rule-asset").addEventListener("change", renderSummary);
+      document.getElementById("stop-percent").addEventListener("input", renderSummary);
+      document.getElementById("take-percent").addEventListener("input", renderSummary);
+      document.getElementById("reset-rule").addEventListener("click", () => {
+        rules = initialRules.map(rule => ({ ...rule }));
+        scenarioCount = 0;
+        document.getElementById("rule-asset").value = "PETR4";
+        document.getElementById("stop-percent").value = "8";
+        document.getElementById("take-percent").value = "15";
+        document.getElementById("signal-copy").textContent = "A regra está configurada para fins demonstrativos. Simule um cenário para ver como um alerta seria exibido.";
+        document.getElementById("signal-status").textContent = "● Aguardando cenário de demonstração";
+        document.getElementById("signal-status").classList.remove("triggered");
+        renderSummary();
+        renderRuleRows("rules-list", false);
+        renderRuleRows("dashboard-rules", true);
+        renderInsights();
+        document.getElementById("active-rules-count").textContent = `${rules.length} regras`;
+        toast("Exemplo de regra restaurado.");
+      });
+      document.getElementById("simulate-scenario").addEventListener("click", () => {
+        const ticker = document.getElementById("rule-asset").value;
+        const asset = assetByTicker(ticker);
+        const stop = Number(document.getElementById("stop-percent").value);
+        const take = Number(document.getElementById("take-percent").value);
+        scenarioCount++;
+        const change = scenarioCount % 2 ? -(stop + 1.2) : take + 1.5;
+        const direction = change < 0 ? "queda" : "alta";
+        const ruleKind = change < 0 ? "Stop loss" : "Take profit";
+        const simulatedPrice = asset.price * (1 + change / 100);
+        rules = rules.filter(rule => rule.ticker !== ticker || rule.kind !== ruleKind);
+        rules.push({ ticker, kind: ruleKind, percent: change < 0 ? stop : take, status: "triggered" });
+        document.getElementById("signal-copy").textContent = `Cenário inventado: ${ticker} a ${price(simulatedPrice)} (${formatChange(change)}). A variação simulada ultrapassou o limite ilustrativo de ${ruleKind.toLowerCase()}.`;
+        document.getElementById("signal-status").textContent = `● Sinal de ${direction} acionado · somente simulação`;
+        document.getElementById("signal-status").classList.add("triggered");
+        renderRuleRows("rules-list", false);
+        renderRuleRows("dashboard-rules", true);
+        renderInsights();
+        toast("Cenário fictício calculado localmente; nenhuma ordem enviada.");
+      });
+
+      document.getElementById("active-rules-count").textContent = `${rules.length} regras`;
+      renderHoldings();
+      renderRuleRows("dashboard-rules", true);
+      renderRuleRows("rules-list", false);
+      renderSummary();
+      renderInsights();
+      drawChart("6M");
+      window.setTimeout(() => document.getElementById("app").classList.remove("is-loading"), 450);
+    })();
+  </script>
+</body>
+</html>
